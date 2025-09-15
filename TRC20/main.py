@@ -1,0 +1,179 @@
+import os
+from trc20_wallet import TRC20Wallet
+
+def main():
+    print("\n=============================================")
+    print("           TRC20 WALLET")
+    print("=============================================")
+    
+    wallet = None
+    
+    print("\nChoose an action:")
+    print("1. I have a wallet (connect to existing)")
+    print("2. Create a new wallet")
+    
+    while True:
+        choice = input("\nEnter action number (1 or 2): ").strip()
+        
+        if choice == "1":
+            print("\nEnter your wallet data:")
+            address = input("Wallet address: ").strip()
+            private_key = input("Private key: ").strip()
+            
+            if address and private_key:
+                if not address.startswith('T') or len(address) != 34:
+                    print("Invalid TRON address format! Address must start with 'T' and contain 34 characters")
+                    continue
+                
+                if len(private_key) != 64 or not all(c in '0123456789abcdef' for c in private_key.lower()):
+                    print("Invalid private key format! Key must contain 64 hex characters")
+                    continue
+                
+                try:
+                    from tronpy.keys import PrivateKey
+                    test_key = PrivateKey(bytes.fromhex(private_key))
+                    test_address = test_key.public_key.to_base58check_address()
+                    
+                    if test_address != address:
+                        print("Address does not match private key!")
+                        continue
+                    
+                    wallet = TRC20Wallet()
+                    wallet.address = address
+                    wallet.key = private_key
+                    print(f"\nConnected to wallet: {address}")
+                    break
+                    
+                except Exception as e:
+                    print(f"Error validating wallet data: {e}")
+                    continue
+            else:
+                print("Invalid wallet data!")
+                continue
+                
+        elif choice == "2":
+            from config import WALLET_FILENAME
+            if os.path.exists(WALLET_FILENAME):
+                print(f"\n⚠️  Warning! File {WALLET_FILENAME} already exists!")
+                overwrite = input("Overwrite existing wallet? (yes/no): ").strip().lower()
+                if overwrite not in ["yes", "y", "да", "д"]:
+                    print("Operation cancelled")
+                    continue
+            
+            print(f"\n Creating new wallet...")
+            wallet = TRC20Wallet()
+            address, private_key = wallet.create_wallet()
+            
+            if wallet.save_wallet_to_file():
+                print(f"Wallet saved to file {WALLET_FILENAME}")
+                print(f"Address: {wallet.address}")
+            else:
+                print(f"Error saving wallet to file")
+            break
+        else:
+            print("Invalid choice! Enter 1 or 2")
+    
+    if wallet is None:
+        print("Wallet was not initialized. Exiting program.")
+        return
+    
+    print()
+    
+    result = wallet.get_all_balances()
+    balances = result["balances"]
+    errors = result["errors"]
+    
+    print("Balance:")
+    for token, balance in balances.items():
+        if token in errors:
+            print(f"  {token}: {balance} (Error: {errors[token]})")
+        else:
+            print(f"  {token}: {balance}")
+    
+    print("\n=============================================")
+    print("Available commands:")
+    print("/info - show wallet address")
+    print("/balance - show balance")
+    print("/send - send cryptocurrency")
+    print("=============================================")
+
+    while True:
+        try:
+            command = input("\nEnter command: ").strip().lower()
+            
+            if command == "/info":
+                from config import WALLET_FILENAME
+                print(f"\nYour wallet address: {wallet.address}")
+                
+            elif command == "/balance":
+                result = wallet.get_all_balances()
+                balances = result["balances"]
+                errors = result["errors"]
+                
+                print("\nBalance:")
+                for token, balance in balances.items():
+                    if token in errors:
+                        print(f"  {token}: {balance} (Error: {errors[token]})")
+                    else:
+                        print(f"  {token}: {balance}")
+                    
+            elif command == "/send":
+                print("\n=== SEND CRYPTOCURRENCY ===")
+                
+                print("Choose token to send:")
+                print("1. TRX")
+                print("2. USDT")
+                
+                token_choice = input("Enter number (1 or 2): ").strip()
+                
+                if token_choice == "1":
+                    token_name = "TRX"
+                elif token_choice == "2":
+                    token_name = "USDT"
+                else:
+                    print("Invalid token choice")
+                    continue
+                
+                to_address = input(f"Enter recipient address ({token_name}): ").strip()
+                
+                try:
+                    amount = float(input(f"Enter {token_name} amount to send: ").strip())
+                except ValueError:
+                    print("Invalid amount")
+                    continue
+                
+                print(f"\nConfirm sending:")
+                print(f"Token: {token_name}")
+                print(f"Amount: {amount}")
+                print(f"Recipient: {to_address}")
+                
+                confirm = input("Send? (yes/no): ").strip().lower()
+                if confirm not in ["yes", "y"]:
+                    print("Sending cancelled")
+                    continue
+                
+                print(f"\nSending {amount} {token_name}...")
+                result = wallet.send_token(to_address, amount, token_name)
+                
+                if result["success"]:
+                    print(f"Sent successfully!")
+                    print(f"TXID: {result['txid']}")
+                    print(f"Amount: {result['amount']} {result['token']}")
+                    print(f"Recipient: {result['to_address']}")
+                else:
+                    print(f"Sending error: {result['error']}")
+                
+            else:
+                print(f"\nUnknown command: {command}")
+                print("Available commands: /info, /balance, /send")
+                
+        except KeyboardInterrupt:
+            print("\n\nExiting wallet...")
+            print(f"⚠️  Private key is in file {WALLET_FILENAME}")
+            print("⚠️  Keep this file in a safe place!")
+            break
+        except Exception as e:
+            print(f"\nError: {e}")
+
+if __name__ == "__main__":
+    main()
