@@ -44,7 +44,7 @@ Project for learning how to work with cryptocurrency wallets in different networ
    python main.py
    ```
 
-### Other networks (Bitcoin, Ethereum, etc.):
+### Other networks:
 
 **Same installation process:**
 ```bash
