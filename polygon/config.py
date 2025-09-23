@@ -1,0 +1,23 @@
+TESTNET = True # False for mainnet
+
+SUPPORTED_TOKENS = {
+    'ETH': 'ADD_CONTRACT_ADDRESS',
+    'USDT': 'ADD_CONTRACT_ADDRESS',
+    'USDC': 'ADD_CONTRACT_ADDRESS',
+    'MATIC': 'NONE',
+    'AVAX': 'ADD_CONTRACT_ADDRESS',
+    'LINK': 'ADD_CONTRACT_ADDRESS',
+    'wBTC': 'ADD_CONTRACT_ADDRESS',
+    'wETH': 'ADD_CONTRACT_ADDRESS',
+}
+
+MAINNET_RPC = 'https://polygon-rpc.com'
+TESTNET_RPC = 'https://rpc-mumbai.maticvigil.com'
+
+DEFAULT_GAS_LIMIT = 21000
+TOKEN_GAS_LIMIT = 60000
+
+POLYGON_CHAIN_ID = 137
+MUMBAI_CHAIN_ID = 80001
+
+WALLET_FILENAME = 'wallet.txt'
